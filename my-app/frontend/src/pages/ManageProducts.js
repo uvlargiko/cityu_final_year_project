@@ -47,7 +47,11 @@ export default function ManageProducts() {
       const res = await fetch('http://localhost:5000/api/goods/getallgoods');
       if (!res.ok) throw new Error('Failed to load products');
       const data = await res.json();
-      setProducts(Array.isArray(data) ? data : []);
+      let nextProducts = [];
+      if (Array.isArray(data)) {
+        nextProducts = data;
+      }
+      setProducts(nextProducts);
     } catch (e) {
       setError(e.message || 'Failed to load products');
     } finally {
@@ -69,6 +73,11 @@ export default function ManageProducts() {
   };
 
   const onEdit = (product) => {
+    let imageUrlText = '';
+    if (Array.isArray(product.imageUrl)) {
+      imageUrlText = product.imageUrl.join(', ');
+    }
+
     setEditingId(product._id || '');
     setForm({
       itemid: product.itemid || '',
@@ -81,7 +90,7 @@ export default function ManageProducts() {
       description: product.description || '',
       rating: String(product.rating ?? ''),
       numReviews: String(product.numReviews ?? ''),
-      imageUrlText: Array.isArray(product.imageUrl) ? product.imageUrl.join(', ') : ''
+      imageUrlText
     });
   };
 
@@ -105,10 +114,15 @@ export default function ManageProducts() {
     setError('');
     try {
       const payload = buildPayload();
-      const url = editingId
-        ? `http://localhost:5000/api/goods/${encodeURIComponent(editingId)}`
-        : 'http://localhost:5000/api/goods';
-      const method = editingId ? 'PUT' : 'POST';
+      let url = 'http://localhost:5000/api/goods';
+      if (editingId) {
+        url = `http://localhost:5000/api/goods/${encodeURIComponent(editingId)}`;
+      }
+
+      let method = 'POST';
+      if (editingId) {
+        method = 'PUT';
+      }
 
       const res = await fetch(url, {
         method,
@@ -155,6 +169,14 @@ export default function ManageProducts() {
     );
   }
 
+  let submitLabel = 'Create Product';
+  if (editingId) {
+    submitLabel = 'Update Product';
+  }
+  if (saving) {
+    submitLabel = 'Saving...';
+  }
+
   return (
     <div className="content manage-products-page">
       <div className="manage-products-head">
@@ -178,7 +200,7 @@ export default function ManageProducts() {
         <input value={form.imageUrlText} onChange={(e) => onChange('imageUrlText', e.target.value)} placeholder="Image URLs (comma-separated)" />
 
         <div className="manage-products-actions">
-          <button type="submit" disabled={saving}>{saving ? 'Saving...' : editingId ? 'Update Product' : 'Create Product'}</button>
+          <button type="submit" disabled={saving}>{submitLabel}</button>
           {editingId && <button type="button" className="secondary" onClick={resetForm}>Cancel Edit</button>}
         </div>
       </form>

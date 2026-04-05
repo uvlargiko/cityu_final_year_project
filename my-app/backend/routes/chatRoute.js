@@ -14,16 +14,15 @@ const STOP_WORDS = new Set([
   'category', 'stock', 'available', 'do', 'we', 'our', 'how', 'of', 'kind', 'kinds',
   'type', 'types', 'sell', 'selling'
 ]);
-
+function normalizeText(value) {
+  return String(value || '').toLowerCase();
+}
 function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function normalizeText(value) {
-  return String(value || '').toLowerCase();
-}
 
-function normalizeToken(token) {
+function normalize(token) {
   const value = normalizeText(token).trim();
   if (value.length <= 3) return value;
   if (value.endsWith('ies') && value.length > 4) return `${value.slice(0, -3)}y`;
@@ -36,29 +35,35 @@ function isProductPriceQuery(message) {
 }
 
 function extractSearchTerms(message) {
-  const terms = normalizeText(message).split(/[^a-z0-9]+/).map((term) => normalizeToken(term)).filter((term) => term.length >= 3 && !STOP_WORDS.has(term));
+  const terms = normalizeText(message).split(/[^a-z0-9]+/).map((term) => 
+    normalize(term)).filter((term) => 
+    term.length >= 3 && !STOP_WORDS.has(term));
   return [...new Set(terms)];
 }
 
 function productSearchScore(product, terms) {
-  const fields = normalizeText(`${product.name} ${product.brand} ${product.category} ${product.description || ''}`).split(/[^a-z0-9]+/).map((token) => normalizeToken(token)).filter(Boolean);
+  const fields = normalizeText(`${product.name} ${product.brand} ${product.category} ${product.description || ''}`).split(/[^a-z0-9]+/).map((token) => normalize(token)).filter(Boolean);
   const tokenSet = new Set(fields);
-  return terms.reduce((score, term) => (tokenSet.has(term) ? score + 1 : score), 0);
+  let score = 0;
+  for (const term of terms) {
+    if (tokenSet.has(term)) {
+      score += 1;
+    }
+  }
+  return score;
 }
 
-async function findMatchedProducts(message, limit = 10) {
-  const terms = extractSearchTerms(message);
+async function findMatchedProducts(mes, limit = 10) {
+  const terms = extractSearchTerms(mes);
   if (terms.length === 0) {
     return [];
   }
+  const candidates = await Good.find({ $or: orConditions },{ name: 1, price: 1, brand: 1, category: 1, countInStock: 1, rating: 1, description: 1 }).limit(80).lean();
 
   const orConditions = terms.flatMap((term) => {
     const regex = { $regex: escapeRegex(term), $options: 'i' };
     return [{ name: regex }, { brand: regex }, { category: regex }];
   });
-
-  const candidates = await Good.find(
-    { $or: orConditions },{ name: 1, price: 1, brand: 1, category: 1, countInStock: 1, rating: 1, description: 1 }).limit(80).lean();
 
   const minTermMatches = Math.min(2, terms.length);
 
@@ -71,14 +76,20 @@ function formatProductRows(products) {
   }
 
   const lines = products.map((p, index) => {
-    const stock = Number.isFinite(Number(p.countInStock)) ? Number(p.countInStock) : 0;
-    const rating = p.rating === null || p.rating === undefined ? 'N/A' : p.rating;
+    let stock = 0;
+    if (Number.isFinite(Number(p.countInStock))) {
+      stock = Number(p.countInStock);
+    }
+    let rating = 'N/A';
+    if (p.rating !== null && p.rating !== undefined) {
+      rating = p.rating;
+    }
     return `${index + 1}. ${p.name} | Brand: ${p.brand} | Price: $${p.price} | Stock: ${stock} | Rating: ${rating}`;
   });
   return ['Here are the matching products from our catalog:', ...lines].join('\n');
 }
 
-function extractMentionedProducts(replyText, products) {
+function extractproduct(replyText, products) {
   const reply = normalizeText(replyText);
   return products.filter((p) => {
     const name = normalizeText(p.name).trim();
@@ -86,14 +97,14 @@ function extractMentionedProducts(replyText, products) {
   });
 }
 
-function hasUnknownProductMentions(replyText, allowedProducts, allProducts) {
+function Unknownmention(replyText, allowedProducts, allProducts) {
   const allowedNames = new Set(allowedProducts.map((p) => normalizeText(p.name).trim()));
-  const mentioned = extractMentionedProducts(replyText, allProducts);
+  const mentioned = extractproduct(replyText, allProducts);
   return mentioned.some((p) => !allowedNames.has(normalizeText(p.name).trim()));
 }
 
 // extract relevant database context
-async function getContextFromDatabase(userMessage, userId, userName) {
+async function getContext(userMessage, userId, userName) {
   try {
     const query = userMessage.toLowerCase();
     let context = '';
@@ -186,11 +197,17 @@ async function getContextFromDatabase(userMessage, userId, userName) {
       if (orders.length > 0) {
         context += '\n=== Order Information ===\n';
         orders.forEach((o) => {
-          const status = o.isDelivered ? 'Delivered' : o.isPaid ? 'Paid' : 'Pending';
+          let status = 'Pending';
+          if (o.isDelivered) {
+            status = 'Delivered';
+          } else if (o.isPaid) {
+            status = 'Paid';
+          }
           const displayOrderId = String(o._id).slice(-8).toUpperCase();
-          const itemsStr = o.orderItems && o.orderItems.length > 0 
-            ? o.orderItems.map(item => `${item.name} (qty: ${item.qty})`).join(', ')
-            : 'N/A';
+          let itemsStr = 'N/A';
+          if (o.orderItems && o.orderItems.length > 0) {
+            itemsStr = o.orderItems.map(item => `${item.name} (qty: ${item.qty})`).join(', ');
+          }
           context += `\n• Order #${displayOrderId} (DB ID: ${o._id}): $${o.totalPrice} (${status}) - ${new Date(o.createdAt).toLocaleDateString()}\n  Items: ${itemsStr}`;
         });
       }
@@ -212,30 +229,34 @@ const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'ecommerce-assistant';
 
 router.post('/', async (req, res) => {
   try {
-    const { message, history, sessionId, userId, userName } = req.body || {};
-    if (!message || typeof message !== 'string') {
+    const { message: mes, history, sessionId, userId, userName } = req.body || {};
+    if (!mes || typeof mes !== 'string') {
       return res.status(400).json({ error: 'Message is required' });
     }
 
-    const messageQuery = message.toLowerCase();
+    const messageQuery = mes.toLowerCase();
     const productPriceQuestion = isProductPriceQuery(messageQuery);
-    const strictMatchedProducts = productPriceQuestion
-      ? await findMatchedProducts(message)
-      : [];
+    let strictMatchedProducts = [];
+    if (productPriceQuestion) {
+      strictMatchedProducts = await findMatchedProducts(mes);
+    }
 
    
     if (productPriceQuestion) {
       const deterministicReply = formatProductRows(strictMatchedProducts);
       const intent = 'product_inquiry';
       const keywords = extractSearchTerms(messageQuery).slice(0, 8).join(', ');
-      const session = typeof sessionId === 'string' && sessionId.trim() ? sessionId.trim() : 'default';
+      let session = 'default';
+      if (typeof sessionId === 'string' && sessionId.trim()) {
+        session = sessionId.trim();
+      }
 
       await ChatMessage.create([
         {
           sessionId: session,
           userId: userId || null,
           role: 'user',
-          content: message,
+          content: mes,
           intent_classified: intent,
           keywords_extracted: keywords
         },
@@ -252,14 +273,15 @@ router.post('/', async (req, res) => {
     }
 
     // Fetch relevant database context
-    const { context: dbContext, products: contextProducts } = await getContextFromDatabase(message, userId, userName);
-    console.log(`[Chat] User message: "${message}"\n[Chat] DB context length: ${dbContext.length}`);
+    const { context: dbContext, products: contextProducts } = await getContext(mes, userId, userName);
+    console.log(`[Chat] User message: "${mes}"\n[Chat] DB context length: ${dbContext.length}`);
 
-    const safeHistory = Array.isArray(history)
-      ? history
-          .filter((m) => m && typeof m.content === 'string' && typeof m.role === 'string')
-          .slice(-10)
-      : [];
+    let safeHistory = [];
+    if (Array.isArray(history)) {
+      safeHistory = history
+        .filter((m) => m && typeof m.content === 'string' && typeof m.role === 'string')
+        .slice(-10);
+    }
 
     // Build system message with database context
     const systemMessage = {
@@ -270,7 +292,7 @@ router.post('/', async (req, res) => {
 
     const body = {
       model: OLLAMA_MODEL,
-      messages: [systemMessage, ...safeHistory, { role: 'user', content: message }],
+      messages: [systemMessage, ...safeHistory, { role: 'user', content: mes }],
       stream: false
     };
 
@@ -291,7 +313,7 @@ router.post('/', async (req, res) => {
     const hasProductIntent = isProductPriceQuery(messageQuery);
     if (hasProductIntent && contextProducts.length > 0) {
       const allProducts = await Good.find({}, { name: 1 }).lean();
-      const unknownMentions = hasUnknownProductMentions(reply, contextProducts, allProducts);
+      const unknownMentions = Unknownmention(reply, contextProducts, allProducts);
       if (unknownMentions) {
         reply = formatProductRows(contextProducts.slice(0, 10));
       }
@@ -300,22 +322,26 @@ router.post('/', async (req, res) => {
     console.log(`[Chat] Ollama reply preview: "${reply.slice(0, 100)}..."`);
 
     // Classify intent from user message
-    const intent = /order|shipping|delivery|status|purchase|payment/.test(messageQuery)
-      ? 'order_inquiry'
-      : /product|item|good|price|brand|category|stock|available/.test(messageQuery)
-      ? 'product_inquiry'
-      : 'general_question';
+    let intent = 'general_question';
+    if (/order|shipping|delivery|status|purchase|payment/.test(messageQuery)) {
+      intent = 'order_inquiry';
+    } else if (/product|item|good|price|brand|category|stock|available/.test(messageQuery)) {
+      intent = 'product_inquiry';
+    }
 
     // Extract keywords
     const keywords = extractSearchTerms(messageQuery).slice(0, 8).join(', ');
 
-    const session = typeof sessionId === 'string' && sessionId.trim() ? sessionId.trim() : 'default';
+    let session = 'default';
+    if (typeof sessionId === 'string' && sessionId.trim()) {
+      session = sessionId.trim();
+    }
     await ChatMessage.create([
       { 
         sessionId: session, 
         userId: userId || null,
         role: 'user', 
-        content: message,
+          content: mes,
         intent_classified: intent,
         keywords_extracted: keywords
       },

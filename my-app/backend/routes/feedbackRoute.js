@@ -49,6 +49,11 @@ router.post('/', async (req, res) => {
 
     // Save to Feedback collection
     await feedback.save();
+
+    let feedbackIsHelpful = null;
+    if (isHelpful !== undefined) {
+      feedbackIsHelpful = isHelpful;
+    }
     
     // update ChatMessage feedback field
     if (sessionId && messageId) {
@@ -57,7 +62,7 @@ router.post('/', async (req, res) => {
         {
           $set: {
             'feedback.rating': rating,
-            'feedback.isHelpful': isHelpful !== undefined ? isHelpful : null,
+            'feedback.isHelpful': feedbackIsHelpful,
             'feedback.category': category || 'other',
             'feedback.comment': comment || '',
             'feedback.suggestedImprovement': suggestedImprovement || '',
@@ -157,6 +162,11 @@ router.get('/stats/summary', async (req, res) => {
     const helpfulCount = await Feedback.countDocuments({ isHelpful: true });
     const unhelpfulCount = await Feedback.countDocuments({ isHelpful: false });
 
+    let helpfulPercentage = 0;
+    if (totalFeedback > 0) {
+      helpfulPercentage = ((helpfulCount / totalFeedback) * 100).toFixed(1);
+    }
+
     res.json({
       totalFeedback,
       averageRating: avgRating[0]?.averageRating || 0,
@@ -167,7 +177,7 @@ router.get('/stats/summary', async (req, res) => {
       helpfulness: {
         helpful: helpfulCount,
         unhelpful: unhelpfulCount,
-        helpful_percentage: totalFeedback > 0 ? ((helpfulCount / totalFeedback) * 100).toFixed(1) : 0
+        helpful_percentage: helpfulPercentage
       },
       categoryBreakdown: categoryBreakdown.reduce((acc, item) => {
         acc[item._id] = item.count;

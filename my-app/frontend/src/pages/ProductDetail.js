@@ -19,7 +19,10 @@ export default function ProductDetail({ cart, setCart }) {
         return res.json();
       })
       .then((data) => {
-        const found = Array.isArray(data) ? data.find(p => p._id === id) : null;
+        let found = null;
+        if (Array.isArray(data)) {
+          found = data.find((p) => p._id === id);
+        }
         setProduct(found);
         setLoading(false);
       })
@@ -35,11 +38,12 @@ export default function ProductDetail({ cart, setCart }) {
     const existing = cart.find(item => item._id === product._id);
     let newCart;
     if (existing) {
-      newCart = cart.map(item =>
-        item._id === product._id
-          ? { ...item, quantity: item.quantity + quantity }
-          : item
-      );
+      newCart = cart.map((item) => {
+        if (item._id === product._id) {
+          return { ...item, quantity: item.quantity + quantity };
+        }
+        return item;
+      });
     } else {
       newCart = [...cart, { ...product, quantity }];
     }
@@ -52,7 +56,15 @@ export default function ProductDetail({ cart, setCart }) {
   if (error) return <div className="content"><div className="error">Error: {error}</div></div>;
   if (!product) return <div className="content"><div className="info">Product not found.</div></div>;
 
-  const images = product.imageUrl && product.imageUrl.length > 0 ? product.imageUrl : [''];
+  let images = [''];
+  if (product.imageUrl && product.imageUrl.length > 0) {
+    images = product.imageUrl;
+  }
+
+  let mainImageNode = <div className="image-placeholder-large">No image</div>;
+  if (images[selectedImage]) {
+    mainImageNode = <img src={images[selectedImage]} alt={product.name} className="main-image" />;
+  }
 
   return (
     <div className="product-detail-page">
@@ -62,27 +74,31 @@ export default function ProductDetail({ cart, setCart }) {
         <div className="product-detail-container">
           <div className="product-images">
             <div className="main-image-wrap">
-              {images[selectedImage] ? (
-                <img src={images[selectedImage]} alt={product.name} className="main-image" />
-              ) : (
-                <div className="image-placeholder-large">No image</div>
-              )}
+              {mainImageNode}
             </div>
             {images.length > 1 && (
               <div className="thumbnail-grid">
-                {images.map((img, idx) => (
-                  <div
-                    key={idx}
-                    className={`thumbnail ${idx === selectedImage ? 'active' : ''}`}
-                    onClick={() => setSelectedImage(idx)}
-                  >
-                    {img ? (
-                      <img src={img} alt={`${product.name} view ${idx + 1}`} />
-                    ) : (
-                      <div className="image-placeholder-small">No image</div>
-                    )}
-                  </div>
-                ))}
+                {images.map((img, idx) => {
+                  let thumbnailClass = 'thumbnail';
+                  if (idx === selectedImage) {
+                    thumbnailClass += ' active';
+                  }
+
+                  let thumbnailNode = <div className="image-placeholder-small">No image</div>;
+                  if (img) {
+                    thumbnailNode = <img src={img} alt={`${product.name} view ${idx + 1}`} />;
+                  }
+
+                  return (
+                    <div
+                      key={idx}
+                      className={thumbnailClass}
+                      onClick={() => setSelectedImage(idx)}
+                    >
+                      {thumbnailNode}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

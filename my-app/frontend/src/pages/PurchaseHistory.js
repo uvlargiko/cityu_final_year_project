@@ -82,37 +82,52 @@ export default function PurchaseHistory() {
           <div className="purchase-history-state">No purchases yet. Your future orders will appear here.</div>
         ) : (
           <div className="purchase-history-list">
-            {orders.map((order) => (
-              <section key={order._id} className="purchase-order-card">
-                <header className="purchase-order-head">
-                  <div>
-                    <h2>Order #{String(order._id).slice(-8).toUpperCase()}</h2>
-                    <span>{new Date(order.createdAt).toLocaleString()}</span>
-                  </div>
-                  <div className="purchase-order-meta">
-                    <strong>${Number(order.totalPrice || 0).toFixed(2)}</strong>
-                    <span className={order.isDelivered ? 'badge delivered' : order.isPaid ? 'badge paid' : 'badge pending'}>
-                      {order.isDelivered ? 'Delivered' : order.isPaid ? 'Paid' : 'Pending'}
-                    </span>
-                  </div>
-                </header>
+            {orders.map((order) => {
+              let statusClass = 'badge pending';
+              let statusLabel = 'Pending';
+              if (order.isDelivered) {
+                statusClass = 'badge delivered';
+                statusLabel = 'Delivered';
+              } else if (order.isPaid) {
+                statusClass = 'badge paid';
+                statusLabel = 'Paid';
+              }
 
-                <div className="purchase-order-items">
-                  {(order.orderItems || []).map((item, idx) => (
-                    <article key={`${order._id}-${idx}`} className="purchase-item-row">
-                      <div className="purchase-item-media">
-                        {item.imageUrl ? <img src={item.imageUrl} alt={item.name} /> : <div className="no-image">No image</div>}
-                      </div>
-                      <div className="purchase-item-info">
-                        <h3>{item.name}</h3>
-                        <p>Quantity: {item.qty}</p>
-                      </div>
-                      <div className="purchase-item-price">${Number(item.price || 0).toFixed(2)}</div>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            ))}
+              return (
+                <section key={order._id} className="purchase-order-card">
+                  <header className="purchase-order-head">
+                    <div>
+                      <h2>Order #{String(order._id).slice(-8).toUpperCase()}</h2>
+                      <span>{new Date(order.createdAt).toLocaleString()}</span>
+                    </div>
+                    <div className="purchase-order-meta">
+                      <strong>${Number(order.totalPrice || 0).toFixed(2)}</strong>
+                      <span className={statusClass}>{statusLabel}</span>
+                    </div>
+                  </header>
+
+                  <div className="purchase-order-items">
+                    {(order.orderItems || []).map((item, idx) => {
+                      let mediaNode = <div className="no-image">No image</div>;
+                      if (item.imageUrl) {
+                        mediaNode = <img src={item.imageUrl} alt={item.name} />;
+                      }
+
+                      return (
+                        <article key={`${order._id}-${idx}`} className="purchase-item-row">
+                          <div className="purchase-item-media">{mediaNode}</div>
+                          <div className="purchase-item-info">
+                            <h3>{item.name}</h3>
+                            <p>Quantity: {item.qty}</p>
+                          </div>
+                          <div className="purchase-item-price">${Number(item.price || 0).toFixed(2)}</div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </section>
+              );
+            })}
           </div>
         )}
       </div>

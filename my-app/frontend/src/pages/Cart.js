@@ -7,9 +7,12 @@ export default function Cart({ cart, setCart }) {
 
   const updateQuantity = (id, newQuantity) => {
     if (newQuantity < 1) return;
-    const newCart = cart.map(item =>
-      item._id === id ? { ...item, quantity: newQuantity } : item
-    );
+    const newCart = cart.map((item) => {
+      if (item._id === id) {
+        return { ...item, quantity: newQuantity };
+      }
+      return item;
+    });
     setCart(newCart);
     localStorage.setItem('cart', JSON.stringify(newCart));
   };
@@ -21,7 +24,16 @@ export default function Cart({ cart, setCart }) {
   };
 
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const shipping = subtotal > 50 ? 0 : 5.99;
+  let shipping = 5.99;
+  if (subtotal > 50) {
+    shipping = 0;
+  }
+
+  let shippingLabel = `$${shipping.toFixed(2)}`;
+  if (shipping === 0) {
+    shippingLabel = 'FREE';
+  }
+
   const total = subtotal + shipping;
 
   if (cart.length === 0) {
@@ -98,7 +110,7 @@ export default function Cart({ cart, setCart }) {
           </div>
           <div className="summary-row">
             <span>Shipping:</span>
-            <span>{shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}</span>
+            <span>{shippingLabel}</span>
           </div>
           {subtotal < 50 && (
             <div className="shipping-note">

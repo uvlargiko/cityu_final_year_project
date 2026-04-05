@@ -16,7 +16,10 @@ import RecommendationWidget from './components/RecommendationWidget';
 // Cart utilities
 const getCartFromStorage = () => {
   const saved = localStorage.getItem('cart');
-  return saved ? JSON.parse(saved) : [];
+  if (saved) {
+    return JSON.parse(saved);
+  }
+  return [];
 };
 
 const saveCartToStorage = (cart) => {
@@ -45,7 +48,10 @@ function Home({ token, isAdmin, handleLogout, cart, setCart }) {
 
   useEffect(() => {
     const onRefresh = (event) => {
-      const ts = event?.detail ? String(event.detail) : (localStorage.getItem('recommendationsRefreshTs') || Date.now().toString());
+      let ts = localStorage.getItem('recommendationsRefreshTs') || Date.now().toString();
+      if (event?.detail) {
+        ts = String(event.detail);
+      }
       setRecommendationRefreshTs(ts);
     };
 
@@ -61,7 +67,11 @@ function Home({ token, isAdmin, handleLogout, cart, setCart }) {
         return res.json();
       })
       .then((data) => {
-        setGoods(Array.isArray(data) ? data : []);
+        let nextGoods = [];
+        if (Array.isArray(data)) {
+          nextGoods = data;
+        }
+        setGoods(nextGoods);
         setLoading(false);
       })
       .catch((err) => {
@@ -122,11 +132,12 @@ function Home({ token, isAdmin, handleLogout, cart, setCart }) {
     const existing = cart.find(item => item._id === product._id);
     let newCart;
     if (existing) {
-      newCart = cart.map(item =>
-        item._id === product._id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      );
+      newCart = cart.map((item) => {
+        if (item._id === product._id) {
+          return { ...item, quantity: item.quantity + 1 };
+        }
+        return item;
+      });
     } else {
       newCart = [...cart, { ...product, quantity: 1 }];
     }

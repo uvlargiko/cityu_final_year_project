@@ -79,7 +79,10 @@ export default function Checkout({ cart, setCart }) {
   const handlePlaceOrder = async () => {
     try {
       const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-      const shipping = subtotal > 50 ? 0 : 5.99;
+      let shipping = 5.99;
+      if (subtotal > 50) {
+        shipping = 0;
+      }
       const totalPrice = subtotal + shipping;
 
       const orderData = {
@@ -139,7 +142,36 @@ export default function Checkout({ cart, setCart }) {
   };
 
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const shipping = subtotal > 50 ? 0 : 5.99;
+  let shipping = 5.99;
+  if (subtotal > 50) {
+    shipping = 0;
+  }
+
+  const getStepClass = (stepNumber) => {
+    let className = 'progress-step';
+    if (step >= stepNumber) {
+      className += ' active';
+    }
+    return className;
+  };
+
+  const getErrorClass = (fieldName) => {
+    if (errors[fieldName]) {
+      return 'error-input';
+    }
+    return '';
+  };
+
+  let paymentSummary = 'Cash on Delivery';
+  if (formData.paymentMethod === 'card') {
+    paymentSummary = `Card ending in ${formData.cardNumber.slice(-4)}`;
+  }
+
+  let shippingLabel = `$${shipping.toFixed(2)}`;
+  if (shipping === 0) {
+    shippingLabel = 'FREE';
+  }
+
   const total = subtotal + shipping;
 
   if (cart.length === 0) {
@@ -155,17 +187,17 @@ export default function Checkout({ cart, setCart }) {
       <h1>Checkout</h1>
       
       <div className="checkout-progress">
-        <div className={`progress-step ${step >= 1 ? 'active' : ''}`}>
+        <div className={getStepClass(1)}>
           <div className="step-number">1</div>
           <div className="step-label">Shipping</div>
         </div>
         <div className="progress-line"></div>
-        <div className={`progress-step ${step >= 2 ? 'active' : ''}`}>
+        <div className={getStepClass(2)}>
           <div className="step-number">2</div>
           <div className="step-label">Payment</div>
         </div>
         <div className="progress-line"></div>
-        <div className={`progress-step ${step >= 3 ? 'active' : ''}`}>
+        <div className={getStepClass(3)}>
           <div className="step-number">3</div>
           <div className="step-label">Review</div>
         </div>
@@ -184,7 +216,7 @@ export default function Checkout({ cart, setCart }) {
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleInputChange}
-                  className={errors.fullName ? 'error-input' : ''}
+                  className={getErrorClass('fullName')}
                 />
                 {errors.fullName && <span className="error-text">{errors.fullName}</span>}
               </div>
@@ -196,7 +228,7 @@ export default function Checkout({ cart, setCart }) {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className={errors.email ? 'error-input' : ''}
+                  className={getErrorClass('email')}
                 />
                 {errors.email && <span className="error-text">{errors.email}</span>}
               </div>
@@ -208,7 +240,7 @@ export default function Checkout({ cart, setCart }) {
                   name="address"
                   value={formData.address}
                   onChange={handleInputChange}
-                  className={errors.address ? 'error-input' : ''}
+                  className={getErrorClass('address')}
                 />
                 {errors.address && <span className="error-text">{errors.address}</span>}
               </div>
@@ -221,7 +253,7 @@ export default function Checkout({ cart, setCart }) {
                     name="city"
                     value={formData.city}
                     onChange={handleInputChange}
-                    className={errors.city ? 'error-input' : ''}
+                    className={getErrorClass('city')}
                   />
                   {errors.city && <span className="error-text">{errors.city}</span>}
                 </div>
@@ -233,7 +265,7 @@ export default function Checkout({ cart, setCart }) {
                     name="zipCode"
                     value={formData.zipCode}
                     onChange={handleInputChange}
-                    className={errors.zipCode ? 'error-input' : ''}
+                    className={getErrorClass('zipCode')}
                   />
                   {errors.zipCode && <span className="error-text">{errors.zipCode}</span>}
                 </div>
@@ -279,7 +311,7 @@ export default function Checkout({ cart, setCart }) {
                       placeholder="1234 5678 9012 3456"
                       value={formData.cardNumber}
                       onChange={handleInputChange}
-                      className={errors.cardNumber ? 'error-input' : ''}
+                      className={getErrorClass('cardNumber')}
                     />
                     {errors.cardNumber && <span className="error-text">{errors.cardNumber}</span>}
                   </div>
@@ -291,7 +323,7 @@ export default function Checkout({ cart, setCart }) {
                       name="cardName"
                       value={formData.cardName}
                       onChange={handleInputChange}
-                      className={errors.cardName ? 'error-input' : ''}
+                      className={getErrorClass('cardName')}
                     />
                     {errors.cardName && <span className="error-text">{errors.cardName}</span>}
                   </div>
@@ -305,7 +337,7 @@ export default function Checkout({ cart, setCart }) {
                         placeholder="MM/YY"
                         value={formData.expiryDate}
                         onChange={handleInputChange}
-                        className={errors.expiryDate ? 'error-input' : ''}
+                        className={getErrorClass('expiryDate')}
                       />
                       {errors.expiryDate && <span className="error-text">{errors.expiryDate}</span>}
                     </div>
@@ -318,7 +350,7 @@ export default function Checkout({ cart, setCart }) {
                         placeholder="123"
                         value={formData.cvv}
                         onChange={handleInputChange}
-                        className={errors.cvv ? 'error-input' : ''}
+                        className={getErrorClass('cvv')}
                       />
                       {errors.cvv && <span className="error-text">{errors.cvv}</span>}
                     </div>
@@ -349,7 +381,7 @@ export default function Checkout({ cart, setCart }) {
 
               <div className="review-section">
                 <h3>Payment Method</h3>
-                <p>{formData.paymentMethod === 'card' ? `Card ending in ${formData.cardNumber.slice(-4)}` : 'Cash on Delivery'}</p>
+                <p>{paymentSummary}</p>
               </div>
 
               <div className="review-section">
@@ -386,7 +418,7 @@ export default function Checkout({ cart, setCart }) {
           </div>
           <div className="summary-row">
             <span>Shipping:</span>
-            <span>{shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}</span>
+            <span>{shippingLabel}</span>
           </div>
           <div className="summary-total">
             <span>Total:</span>

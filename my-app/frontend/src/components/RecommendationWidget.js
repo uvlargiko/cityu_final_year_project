@@ -5,6 +5,17 @@ export function RecommendationWidget({ userId, maxItems = 5, onAddToCart, refres
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const getImageSrc = (product) => {
+    const value = product?.imageUrl;
+    if (Array.isArray(value)) {
+      return value.find((url) => typeof url === 'string' && url.trim()) || '';
+    }
+    if (typeof value === 'string') {
+      return value.trim();
+    }
+    return '';
+  };
+
   useEffect(() => {
     if (!userId) return;
 
@@ -50,20 +61,27 @@ export function RecommendationWidget({ userId, maxItems = 5, onAddToCart, refres
       <h3 className="recommendation-title">Recommended for You</h3>
       <p className="recommendation-subtitle">Personalized picks based on your recent orders</p>
       <div className="recommendation-list">
-        {recommendations.map(product => (
-          <div key={product._id} className="recommendation-item">
-            <div className="recommendation-image-wrap">
-              <img
-                className="recommendation-image"
-                src={product.imageUrl?.[0] || ''}
-                alt={product.name}
-              />
+        {recommendations.map((product) => {
+          const imageSrc = getImageSrc(product);
+          return (
+            <div key={product._id} className="recommendation-item">
+              <div className="recommendation-image-wrap">
+                {imageSrc ? (
+                  <img
+                    className="recommendation-image"
+                    src={imageSrc}
+                    alt={product.name}
+                  />
+                ) : (
+                  <div className="recommendation-image-placeholder">No image</div>
+                )}
+              </div>
+              <h4 className="recommendation-name">{product.name}</h4>
+              <p className="recommendation-price">${Number(product.price || 0).toFixed(2)}</p>
+              <button className="recommendation-btn" onClick={() => handleAddToCart(product)}>Add to Cart</button>
             </div>
-            <h4 className="recommendation-name">{product.name}</h4>
-            <p className="recommendation-price">${Number(product.price || 0).toFixed(2)}</p>
-            <button className="recommendation-btn" onClick={() => handleAddToCart(product)}>Add to Cart</button>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

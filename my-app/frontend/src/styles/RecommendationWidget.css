@@ -79,6 +79,11 @@
 	object-fit: contain;
 }
 
+.recommendation-image-placeholder {
+	font-size: 13px;
+	color: #64748b;
+}
+
 .recommendation-name {
 	margin: 0;
 	font-size: 15px;

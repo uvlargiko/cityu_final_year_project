@@ -15,7 +15,10 @@ app.use(express.json());
 const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001'];
 
 function normalizeOrigin(origin) {
-  return typeof origin === 'string' ? origin.replace(/\/$/, '') : origin;
+  if (typeof origin === 'string') {
+    return origin.replace(/\/$/, '');
+  }
+  return origin;
 }
 
 function isAllowedOrigin(origin) {

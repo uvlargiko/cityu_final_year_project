@@ -6,12 +6,23 @@ export default function ChatHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const formatCreatedAt = (value) => {
+    if (value) {
+      return new Date(value).toLocaleString();
+    }
+    return '';
+  };
+
   useEffect(() => {
     const sessionId = localStorage.getItem('chatSessionId') || 'default';
     fetch(`http://localhost:5000/api/chat/history?sessionId=${encodeURIComponent(sessionId)}`)
       .then((res) => res.json())
       .then((data) => {
-        setRecords(Array.isArray(data.records) ? data.records : []);
+        let nextRecords = [];
+        if (Array.isArray(data.records)) {
+          nextRecords = data.records;
+        }
+        setRecords(nextRecords);
         setLoading(false);
       })
       .catch((err) => {
@@ -35,7 +46,7 @@ export default function ChatHistory() {
               <div className="chat-history-role">{r.role}</div>
               <div className="chat-history-content">{r.content}</div>
               <div className="chat-history-time">
-                {r.createdAt ? new Date(r.createdAt).toLocaleString() : ''}
+                {formatCreatedAt(r.createdAt)}
               </div>
             </div>
           ))}

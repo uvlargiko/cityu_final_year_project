@@ -42,7 +42,11 @@ export default function AnalyticsView() {
 
         if (!canceled) {
           setSummary(summaryData || null);
-          setRecentFeedback(Array.isArray(listData?.data) ? listData.data.slice(0, 10) : []);
+          let nextRecentFeedback = [];
+          if (Array.isArray(listData?.data)) {
+            nextRecentFeedback = listData.data.slice(0, 10);
+          }
+          setRecentFeedback(nextRecentFeedback);
         }
       } catch (e) {
         if (!canceled) {
@@ -76,6 +80,23 @@ export default function AnalyticsView() {
 
   const ratingDistribution = summary?.ratingDistribution || {};
   const categoryBreakdown = summary?.categoryBreakdown || {};
+
+  const getHelpfulText = (value) => {
+    if (typeof value !== 'boolean') {
+      return 'N/A';
+    }
+    if (value) {
+      return 'Yes';
+    }
+    return 'No';
+  };
+
+  const renderComment = (value) => {
+    if (value) {
+      return <p className="feedback-comment">{value}</p>;
+    }
+    return <p className="muted">No comment</p>;
+  };
 
   return (
     <div className="content analytics-page">
@@ -147,8 +168,8 @@ export default function AnalyticsView() {
                       <strong>{f.category || 'other'}</strong>
                       <span>{new Date(f.createdAt || Date.now()).toLocaleString()}</span>
                     </header>
-                    <p className="feedback-meta">Rating: {f.rating} | Helpful: {typeof f.isHelpful === 'boolean' ? (f.isHelpful ? 'Yes' : 'No') : 'N/A'}</p>
-                    {f.comment ? <p className="feedback-comment">{f.comment}</p> : <p className="muted">No comment</p>}
+                    <p className="feedback-meta">Rating: {f.rating} | Helpful: {getHelpfulText(f.isHelpful)}</p>
+                    {renderComment(f.comment)}
                   </article>
                 ))}
               </div>

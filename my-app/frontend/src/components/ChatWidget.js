@@ -90,7 +90,15 @@ export default function ChatWidget() {
   // Submit quick feedback (like/dislike)
   const submitQuickFeedback = async (messageIndex, isHelpful, rating) => {
     const assistantMessage = messages[messageIndex];
-    const userMessage = messageIndex > 0 ? messages[messageIndex - 1]?.content : 'General inquiry';
+    let userMessage = 'General inquiry';
+    if (messageIndex > 0) {
+      userMessage = messages[messageIndex - 1]?.content;
+    }
+
+    let feedbackCategory = 'irrelevant';
+    if (isHelpful) {
+      feedbackCategory = 'helpful';
+    }
 
     try {
       await fetch('http://localhost:5000/api/feedback', {
@@ -103,7 +111,7 @@ export default function ChatWidget() {
           assistantResponse: assistantMessage.content,
           rating,
           isHelpful,
-          category: isHelpful ? 'helpful' : 'irrelevant'
+          category: feedbackCategory
         })
       });
 
@@ -127,7 +135,10 @@ export default function ChatWidget() {
   // Submit detailed feedback
   const submitDetailedFeedback = async (messageIndex, feedbackData) => {
     const assistantMessage = messages[messageIndex];
-    const userMessage = messageIndex > 0 ? messages[messageIndex - 1]?.content : 'General inquiry';
+    let userMessage = 'General inquiry';
+    if (messageIndex > 0) {
+      userMessage = messages[messageIndex - 1]?.content;
+    }
 
     try {
       await fetch('http://localhost:5000/api/feedback', {
@@ -262,6 +273,22 @@ function FeedbackModal({ onClose, onSubmit }) {
   const [comment, setComment] = useState('');
   const [suggestion, setSuggestion] = useState('');
 
+  const getStarClass = (star) => {
+    let className = 'star';
+    if (rating >= star) {
+      className += ' active';
+    }
+    return className;
+  };
+
+  const getHelpfulBtnClass = (value) => {
+    let className = 'toggle-btn';
+    if (isHelpful === value) {
+      className += ' active';
+    }
+    return className;
+  };
+
   const handleSubmit = () => {
     onSubmit({ rating, isHelpful, category, comment, suggestion });
   };
@@ -282,7 +309,7 @@ function FeedbackModal({ onClose, onSubmit }) {
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}
-                  className={`star ${rating >= star ? 'active' : ''}`}
+                  className={getStarClass(star)}
                   onClick={() => setRating(star)}
                 >
                   ⭐
@@ -296,13 +323,13 @@ function FeedbackModal({ onClose, onSubmit }) {
             <label>Was this response helpful?</label>
             <div className="feedback-toggle">
               <button
-                className={`toggle-btn ${isHelpful === true ? 'active' : ''}`}
+                className={getHelpfulBtnClass(true)}
                 onClick={() => setIsHelpful(true)}
               >
                 👍 Yes
               </button>
               <button
-                className={`toggle-btn ${isHelpful === false ? 'active' : ''}`}
+                className={getHelpfulBtnClass(false)}
                 onClick={() => setIsHelpful(false)}
               >
                 👎 No

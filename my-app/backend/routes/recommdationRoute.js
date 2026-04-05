@@ -39,7 +39,10 @@ function selectDiversified(products, itemCount) {
 function selectBalancedForUser(products, itemCount, dominantCategory, dominantShare) {
   if (!dominantCategory) return selectDiversified(products, itemCount);
 
-  const maxFromDominant = dominantShare >= 0.5 && itemCount >= 3 ? 2 : 1;
+  let maxFromDominant = 1;
+  if (dominantShare >= 0.5 && itemCount >= 3) {
+    maxFromDominant = 2;
+  }
   const selected = [];
   const selectedIds = new Set();
   const selectedCategories = new Set();
@@ -129,7 +132,11 @@ async function getUserPurchaseSignals(userId) {
       const id = toIdString(item && item.itemid);
       const good = goodsByItemId.get(id) || goodsById.get(id);
       if (!good) return;
-      const qty = Math.max(1, Number(item && item.qty ? item.qty : 1));
+      let qty = 1;
+      if (item && item.qty) {
+        qty = Number(item.qty);
+      }
+      qty = Math.max(1, qty);
       const qtyWeight = Math.min(qty, 4);
       const combinedWeight = recencyWeight * qtyWeight;
       const goodId = toIdString(good._id);
@@ -158,15 +165,21 @@ async function getUserPurchaseSignals(userId) {
   const sortedCategoryWeights = Object.entries(categoryWeights).sort((a, b) => b[1] - a[1]);
   const dominantCategory = sortedCategoryWeights[0]?.[0] || null;
   const totalCategoryWeight = sortedCategoryWeights.reduce((sum, [, w]) => sum + Number(w || 0), 0);
-  const dominantCategoryShare = totalCategoryWeight > 0
-    ? Number(sortedCategoryWeights[0]?.[1] || 0) / totalCategoryWeight
-    : 0;
+  let dominantCategoryShare = 0;
+  if (totalCategoryWeight > 0) {
+    dominantCategoryShare = Number(sortedCategoryWeights[0]?.[1] || 0) / totalCategoryWeight;
+  }
+
+  let avgPrice = 0;
+  if (weightSum > 0) {
+    avgPrice = weightedPriceSum / weightSum;
+  }
 
   return {
     purchasedGoodIds,
     preferredCategories,
     preferredBrands,
-    avgPrice: weightSum > 0 ? weightedPriceSum / weightSum : 0,
+    avgPrice,
     dominantCategory,
     dominantCategoryShare
   };
@@ -176,17 +189,23 @@ function scoreCandidate(signal, product) {
   const inPreferredCategory = signal.preferredCategories.has(product.category);
   const inPreferredBrand = signal.preferredBrands.has(product.brand);
   const priceDiff = Math.abs(Number(product.price || 0) - signal.avgPrice);
-  const priceScore = signal.avgPrice > 0
-    ? Math.max(0, 1 - priceDiff / Math.max(signal.avgPrice, 1))
-    : 0.5;
+  let priceScore = 0.5;
+  if (signal.avgPrice > 0) {
+    priceScore = Math.max(0, 1 - priceDiff / Math.max(signal.avgPrice, 1));
+  }
   const popularityScore = Math.min((Number(product.rating || 0) / 5) * 0.7 + (Number(product.numReviews || 0) / 300) * 0.3, 1);
 
-  return (
-    0.45 * (inPreferredCategory ? 1 : 0.2) +
-    0.2 * (inPreferredBrand ? 1 : 0.2) +
-    0.2 * priceScore +
-    0.15 * popularityScore
-  );
+  let categoryWeight = 0.2;
+  if (inPreferredCategory) {
+    categoryWeight = 1;
+  }
+
+  let brandWeight = 0.2;
+  if (inPreferredBrand) {
+    brandWeight = 1;
+  }
+
+  return 0.45 * categoryWeight + 0.2 * brandWeight + 0.2 * priceScore + 0.15 * popularityScore;
 }
 
 async function hybridRecommendation(userId, itemCount = 5) {
