@@ -41,7 +41,7 @@ function extractSearchTerms(message) {
   return [...new Set(terms)];
 }
 
-function productSearchScore(product, terms) {
+function productScore(product, terms) {
   const fields = normalizeText(`${product.name} ${product.brand} ${product.category} ${product.description || ''}`).split(/[^a-z0-9]+/).map((token) => normalize(token)).filter(Boolean);
   const tokenSet = new Set(fields);
   let score = 0;
@@ -67,7 +67,7 @@ async function findMatchedProducts(mes, limit = 10) {
 
   const minTermMatches = Math.min(2, terms.length);
 
-  return candidates.map((product) => ({ product, score: productSearchScore(product, terms) })).filter((entry) => entry.score >= minTermMatches)
+  return candidates.map((product) => ({ product, score: productScore(product, terms) })).filter((entry) => entry.score >= minTermMatches)
     .sort((a, b) => b.score - a.score).slice(0, limit).map((entry) => entry.product);}
 
 function formatProductRows(products) {
@@ -126,7 +126,6 @@ async function getContext(userMessage, userId, userName) {
         ).limit(50).lean();
       }
     }
-
     // If no matches fetch top products
     if (products.length === 0) {
       products = await Good.find(
@@ -134,50 +133,39 @@ async function getContext(userMessage, userId, userName) {
         { name: 1, price: 1, brand: 1, category: 1, countInStock: 1, description: 1, rating: 1 }
       ).limit(100).lean();
     }
-
     if (products.length > 0) {
       context += '\n=== Available Products ===\n';
       products.forEach((p) => {
         context += `\n• ${p.name} | Brand: ${p.brand} | Price: $${p.price} | Category: ${p.category} | Stock: ${p.countInStock} | Rating: ${p.rating || 'N/A'}`;
       });
     }
-
     // Search orders if user asks about keywords
     if (/order|shipping|delivery|status|purchase|payment|refund|damaged|broken|defective/.test(query)) {
-      let orders = [];
-      
+    let orders = [];
       // Extract specific order ID from message (supports full ObjectId or short display ID)
       const orderIdMatch = userMessage.match(/#?([\dA-Fa-f]{8,24})/);
       if (orderIdMatch) {
-        const requestedId = orderIdMatch[1].toLowerCase();
+      const requestedId = orderIdMatch[1].toLowerCase();
         try {
           // If full ObjectId is provided, query directly.
           if (requestedId.length === 24) {
-            const specificOrder = await Order.findById(requestedId)
-              .select('_id totalPrice isPaid isDelivered createdAt orderItems')
-              .lean();
+          const specificOrder = await Order.findById(requestedId).select('_id totalPrice isPaid isDelivered createdAt orderItems').lean();
             if (specificOrder) {
-              orders.push(specificOrder);
+            orders.push(specificOrder);
             }
           }
-
           // If short display ID is provided (e.g. last 8 chars), match against recent orders.
           if (orders.length === 0 && requestedId.length >= 8) {
-            const recentOrders = await Order.find(
-              {},
-              { _id: 1, totalPrice: 1, isPaid: 1, isDelivered: 1, createdAt: 1, orderItems: 1 }
+            const recentOrders = await Order.find({},{ _id: 1, totalPrice: 1, isPaid: 1, isDelivered: 1, createdAt: 1, orderItems: 1 }
             ).sort({ createdAt: -1 }).limit(200).lean();
 
             const matched = recentOrders.find((o) => String(o._id).toLowerCase().endsWith(requestedId));
-            if (matched) {
-              orders.push(matched);
-            }
+            if (matched) {orders.push(matched);}
           }
         } catch (err) {
           console.log('Order ID lookup failed:', err.message);
         }
       }
-      
       // Also fetch recent orders by userId/userName if no specific order found
       if (orders.length === 0) {
         const userFilters = [];
@@ -185,12 +173,8 @@ async function getContext(userMessage, userId, userName) {
         if (userName) userFilters.push({ user: userName });
 
         if (userFilters.length > 0) {
-          orders = await Order.find(
-            { $or: userFilters },
-            { _id: 1, totalPrice: 1, isPaid: 1, isDelivered: 1, createdAt: 1, orderItems: 1 }
-          ).sort({ createdAt: -1 })
-            .limit(5)
-            .lean();
+          orders = await Order.find({ $or: userFilters },{ _id: 1, totalPrice: 1, isPaid: 1, isDelivered: 1, createdAt: 1, orderItems: 1 }
+          ).sort({ createdAt: -1 }).limit(5).lean();
         }
       }
 
@@ -199,33 +183,32 @@ async function getContext(userMessage, userId, userName) {
         orders.forEach((o) => {
           let status = 'Pending';
           if (o.isDelivered) {
-            status = 'Delivered';
+          status = 'Delivered';
           } else if (o.isPaid) {
-            status = 'Paid';
+          status = 'Paid';
           }
-          const displayOrderId = String(o._id).slice(-8).toUpperCase();
+          const orderID = String(o._id).slice(-8).toUpperCase();
           let itemsStr = 'N/A';
           if (o.orderItems && o.orderItems.length > 0) {
             itemsStr = o.orderItems.map(item => `${item.name} (qty: ${item.qty})`).join(', ');
           }
-          context += `\n• Order #${displayOrderId} (DB ID: ${o._id}): $${o.totalPrice} (${status}) - ${new Date(o.createdAt).toLocaleDateString()}\n  Items: ${itemsStr}`;
+          context += `\n• Order #${orderID} (DB ID: ${o._id}): $${o.totalPrice} (${status}) - ${new Date(o.createdAt).toLocaleDateString()}\n  Items: ${itemsStr}`;
         });
       }
     }
-
     console.log(`[Chat] Retrieved context (${products.length} products):`, context.slice(0, 200));
     return { context, products };
   } catch (err) {
     console.error('Context fetch error:', err.message);
     return {
-      context: 'Note: Unable to fetch product data from database at this moment.',
+      context: 'Failure occurred when fetching data from database.',
       products: []
     };
   }
 }
 
-const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'ecommerce-assistant';
+const ollamaUrl = process.env.ollamaUrl || 'http://localhost:11434';
+const ollamaModel = process.env.ollamaModel || 'ecommerce-assistant';
 
 router.post('/', async (req, res) => {
   try {
@@ -233,9 +216,8 @@ router.post('/', async (req, res) => {
     if (!mes || typeof mes !== 'string') {
       return res.status(400).json({ error: 'Message is required' });
     }
-
-    const messageQuery = mes.toLowerCase();
-    const productPriceQuestion = isProductPriceQuery(messageQuery);
+    const query = mes.toLowerCase();
+    const productPriceQuestion = isProductPriceQuery(query);
     let strictMatchedProducts = [];
     if (productPriceQuestion) {
       strictMatchedProducts = await findMatchedProducts(mes);
@@ -245,12 +227,11 @@ router.post('/', async (req, res) => {
     if (productPriceQuestion) {
       const deterministicReply = formatProductRows(strictMatchedProducts);
       const intent = 'product_inquiry';
-      const keywords = extractSearchTerms(messageQuery).slice(0, 8).join(', ');
+      const keywords = extractSearchTerms(query).slice(0, 8).join(', ');
       let session = 'default';
       if (typeof sessionId === 'string' && sessionId.trim()) {
         session = sessionId.trim();
       }
-
       await ChatMessage.create([
         {
           sessionId: session,
@@ -259,8 +240,7 @@ router.post('/', async (req, res) => {
           content: mes,
           intent_classified: intent,
           keywords_extracted: keywords
-        },
-        {
+        },{
           sessionId: session,
           userId: userId || null,
           role: 'assistant',
@@ -268,14 +248,12 @@ router.post('/', async (req, res) => {
           context_retrieved: `matchedProducts:${strictMatchedProducts.length}`
         }
       ]);
-
       return res.json({ reply: deterministicReply });
     }
 
     // Fetch relevant database context
     const { context: dbContext, products: contextProducts } = await getContext(mes, userId, userName);
-    console.log(`[Chat] User message: "${mes}"\n[Chat] DB context length: ${dbContext.length}`);
-
+    // console.log(`[Chat] User message: "${mes}"\n[Chat] DB context length: ${dbContext.length}`);
     let safeHistory = [];
     if (Array.isArray(history)) {
       safeHistory = history
@@ -291,12 +269,12 @@ router.post('/', async (req, res) => {
     };
 
     const body = {
-      model: OLLAMA_MODEL,
+      model: ollamaModel,
       messages: [systemMessage, ...safeHistory, { role: 'user', content: mes }],
       stream: false
     };
 
-    const response = await fetch(`${OLLAMA_URL}/api/chat`, {
+    const response = await fetch(`${ollamaUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
@@ -310,7 +288,7 @@ router.post('/', async (req, res) => {
     const data = await response.json();
     let reply = data?.message?.content || data?.response || '';
 
-    const hasProductIntent = isProductPriceQuery(messageQuery);
+    const hasProductIntent = isProductPriceQuery(query);
     if (hasProductIntent && contextProducts.length > 0) {
       const allProducts = await Good.find({}, { name: 1 }).lean();
       const unknownMentions = Unknownmention(reply, contextProducts, allProducts);
@@ -323,14 +301,14 @@ router.post('/', async (req, res) => {
 
     // Classify intent from user message
     let intent = 'general_question';
-    if (/order|shipping|delivery|status|purchase|payment/.test(messageQuery)) {
+    if (/order|shipping|delivery|status|purchase|payment/.test(query)) {
       intent = 'order_inquiry';
-    } else if (/product|item|good|price|brand|category|stock|available/.test(messageQuery)) {
+    } else if (/product|item|good|price|brand|category|stock|available/.test(query)) {
       intent = 'product_inquiry';
     }
 
     // Extract keywords
-    const keywords = extractSearchTerms(messageQuery).slice(0, 8).join(', ');
+    const keywords = extractSearchTerms(query).slice(0, 8).join(', ');
 
     let session = 'default';
     if (typeof sessionId === 'string' && sessionId.trim()) {

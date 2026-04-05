@@ -32,7 +32,6 @@ function selectDiversified(products, itemCount) {
     }
     if (selected.length >= itemCount) break;
   }
-
   return selected;
 }
 
@@ -48,7 +47,7 @@ function selectBalancedForUser(products, itemCount, dominantCategory, dominantSh
   const selectedCategories = new Set();
   let dominantCount = 0;
 
-  // Pass 1: keep strong preference signal (e.g., Footwear) without full domination
+  // keep strong preference signal (e.g., Footwear) without full domination
   for (const p of products) {
     if ((p.category || 'Uncategorized') !== dominantCategory) continue;
     const id = toIdString(p._id);
@@ -61,7 +60,7 @@ function selectBalancedForUser(products, itemCount, dominantCategory, dominantSh
     if (selected.length >= itemCount) return selected;
   }
 
-  // Pass 2: add different categories for variety
+  // add different categories for variety
   for (const p of products) {
     const id = toIdString(p._id);
     const category = p.category || 'Uncategorized';
@@ -73,7 +72,7 @@ function selectBalancedForUser(products, itemCount, dominantCategory, dominantSh
     if (selected.length >= itemCount) return selected;
   }
 
-  // Pass 3: fill remainder by score order
+  // fill remainder by score order
   for (const p of products) {
     const id = toIdString(p._id);
     if (!selectedIds.has(id)) {
@@ -85,7 +84,38 @@ function selectBalancedForUser(products, itemCount, dominantCategory, dominantSh
 
   return selected;
 }
+async function hybridRecommendation(userId, itemCount = 5) {
+  const signal = await getUserPurchaseSignals(userId);
+  const poolLimit = Math.max(itemCount * 20, 200);
+  const allProducts = await Good.find({}).sort({ rating: -1, numReviews: -1 }).limit(poolLimit).lean();
 
+  // New users: diversified popular picks
+  if (signal.purchasedGoodIds.size === 0) {
+    return selectDiversified(allProducts, itemCount);
+  }
+
+  const scored = allProducts.filter((p) => !signal.purchasedGoodIds.has(toIdString(p._id))).map((p) => ({ ...p, finalScore: scoreCandidate(signal, p) }))
+    .sort((a, b) => b.finalScore - a.finalScore);
+
+  return selectBalancedForUser(
+    scored,
+    itemCount,
+    signal.dominantCategory,
+    signal.dominantCategoryShare
+  ).map((p) => ({
+    _id: p._id,
+    itemid: p.itemid,
+    name: p.name,
+    price: p.price,
+    brand: p.brand,
+    category: p.category,
+    countInStock: p.countInStock,
+    rating: p.rating,
+    description: p.description,
+    imageUrl: p.imageUrl,
+    finalScore: p.finalScore
+  }));
+}
 async function getUserPurchaseSignals(userId) {
   const orders = await Order.find({ user: userId }).sort({ createdAt: -1 }).lean();
   if (!orders.length) {
@@ -208,40 +238,7 @@ function scoreCandidate(signal, product) {
   return 0.45 * categoryWeight + 0.2 * brandWeight + 0.2 * priceScore + 0.15 * popularityScore;
 }
 
-async function hybridRecommendation(userId, itemCount = 5) {
-  const signal = await getUserPurchaseSignals(userId);
-  const poolLimit = Math.max(itemCount * 20, 200);
-  const allProducts = await Good.find({}).sort({ rating: -1, numReviews: -1 }).limit(poolLimit).lean();
 
-  // New users: diversified popular picks
-  if (signal.purchasedGoodIds.size === 0) {
-    return selectDiversified(allProducts, itemCount);
-  }
-
-  const scored = allProducts
-    .filter((p) => !signal.purchasedGoodIds.has(toIdString(p._id)))
-    .map((p) => ({ ...p, finalScore: scoreCandidate(signal, p) }))
-    .sort((a, b) => b.finalScore - a.finalScore);
-
-  return selectBalancedForUser(
-    scored,
-    itemCount,
-    signal.dominantCategory,
-    signal.dominantCategoryShare
-  ).map((p) => ({
-    _id: p._id,
-    itemid: p.itemid,
-    name: p.name,
-    price: p.price,
-    brand: p.brand,
-    category: p.category,
-    countInStock: p.countInStock,
-    rating: p.rating,
-    description: p.description,
-    imageUrl: p.imageUrl,
-    finalScore: p.finalScore
-  }));
-}
 
 router.get('/:userId', async (req, res) => {
   try {

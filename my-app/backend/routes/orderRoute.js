@@ -7,9 +7,9 @@ router.post('/create', async (req, res) => {
   try {
     console.log('[Order] Create payload:', req.body);
     const order = new Order(req.body);
-    const savedOrder = await order.save();
-    console.log('[Order] Saved:', savedOrder._id);
-    res.status(201).json(savedOrder);
+    const order_Saved = await order.save();
+    console.log('[Order] Saved:', order_Saved._id);
+    res.status(201).json(order_Saved);
   } catch (error) {
     console.error('[Order] Create error:', error.message);
     res.status(400).json({ error: error.message, details: error.errors || null });

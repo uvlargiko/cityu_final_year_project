@@ -11,38 +11,12 @@ const chatMessageSchema = new mongoose.Schema(
     intent_classified: { type: String, default: null },
     keywords_extracted: { type: String, default: null },
     meta: { type: Object },
-    
-    // Feedback fields (for assistant responses)
-    feedback: {
-      rating: {
-        type: Number,
-        enum: [1, 2, 3, 4, 5],
-        default: null
-      },
-      isHelpful: {
-        type: Boolean,
-        default: null
-      },
-      category: {
-        type: String,
-        enum: ['accurate', 'inaccurate', 'helpful', 'irrelevant', 'confused', 'other'],
-        default: null
-      },
-      comment: {
-        type: String,
-        maxlength: 500
-      },
-      suggestedImprovement: {
-        type: String,
-        maxlength: 500
-      },
-      submittedAt: {
-        type: Date,
-        default: null
-      }
-    }
-  },
-  { timestamps: true }
-);
+    feedback: {rating: {type: Number,enum: [1, 2, 3, 4, 5]},
+    isHelpful: {type: Boolean},
+    category: {type: String,enum: ['accurate', 'inaccurate', 'helpful', 'irrelevant', 'confused', 'other']},
+    comment: {type: String,maxlength: 500},
+    suggestedImprovement: {type: String,maxlength: 500},
+    submittedAt: {type: Date,}}
+  },{ timestamps: true });
 
 module.exports = mongoose.model('ChatMessage', chatMessageSchema);

@@ -19,21 +19,16 @@ router.post('/', async (req, res) => {
       suggestedImprovement,
       userEmail
     } = req.body;
-
-    // Validate required fields
     if (!sessionId || !userMessage || !assistantResponse || !rating) {
       return res.status(400).json({
         error: 'Missing required fields: sessionId, userMessage, assistantResponse, rating'
       });
     }
-
     if (rating < 1 || rating > 5) {
       return res.status(400).json({
         error: 'Rating must be between 1 and 5'
       });
     }
-
-    // Create feedback document in Feedback collection
     const feedback = new Feedback({
       sessionId,
       messageId,
@@ -47,12 +42,11 @@ router.post('/', async (req, res) => {
       userEmail
     });
 
-    // Save to Feedback collection
     await feedback.save();
 
-    let feedbackIsHelpful = null;
+    let helpful = null;
     if (isHelpful !== undefined) {
-      feedbackIsHelpful = isHelpful;
+      helpful = isHelpful;
     }
     
     // update ChatMessage feedback field
@@ -62,7 +56,7 @@ router.post('/', async (req, res) => {
         {
           $set: {
             'feedback.rating': rating,
-            'feedback.isHelpful': feedbackIsHelpful,
+            'feedback.isHelpful': helpful,
             'feedback.category': category || 'other',
             'feedback.comment': comment || '',
             'feedback.suggestedImprovement': suggestedImprovement || '',
@@ -74,7 +68,6 @@ router.post('/', async (req, res) => {
     }
     
     console.log(`[Feedback] ✅ Saved feedback - Rating: ${rating}, Category: ${category}, MessageId: ${messageId}`);
-
     res.status(201).json({
       success: true,
       message: 'Thank you for your feedback!',
@@ -94,9 +87,7 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const feedback = await Feedback.find().sort({ createdAt: -1 }).limit(100).lean();
-    res.json({
-      count: feedback.length,
-      data: feedback
+    res.json({count: feedback.length,data: feedback
     });
   } catch (err) {
     console.error('[Feedback] Error retrieving feedback:', err.message);
@@ -108,15 +99,8 @@ router.get('/', async (req, res) => {
 router.get('/session/:sessionId', async (req, res) => {
   try {
     const { sessionId } = req.params;
-
-    const feedback = await Feedback.find({ sessionId })
-      .sort({ createdAt: -1 })
-      .lean();
-
-    res.json({
-      sessionId,
-      count: feedback.length,
-      data: feedback
+    const feedback = await Feedback.find({ sessionId }).sort({ createdAt: -1 }).lean();
+    res.json({sessionId,count: feedback.length,data: feedback
     });
   } catch (err) {
     console.error('[Feedback] Error retrieving session feedback:', err.message);
@@ -128,8 +112,7 @@ router.get('/session/:sessionId', async (req, res) => {
 router.get('/stats/summary', async (req, res) => {
   try {
     const totalFeedback = await Feedback.countDocuments();
-    
-    const avgRating = await Feedback.aggregate([
+    const avergeRate = await Feedback.aggregate([
       {
         $group: {
           _id: null,
@@ -169,7 +152,7 @@ router.get('/stats/summary', async (req, res) => {
 
     res.json({
       totalFeedback,
-      averageRating: avgRating[0]?.averageRating || 0,
+      averageRating: avergeRate[0]?.averageRating || 0,
       ratingDistribution: ratingDistribution.reduce((acc, item) => {
         acc[`rating_${item._id}`] = item.count;
         return acc;
