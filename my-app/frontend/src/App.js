@@ -54,7 +54,6 @@ function Home({ token, isAdmin, handleLogout, cart, setCart }) {
       }
       setRecommendationRefreshTs(ts);
     };
-
     window.addEventListener('recommendations:refresh', onRefresh);
     return () => window.removeEventListener('recommendations:refresh', onRefresh);
   }, []);

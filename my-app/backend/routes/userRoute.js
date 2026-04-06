@@ -3,15 +3,15 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User.js');
 const router = express.Router();
+const JWT_SECRET = process.env.JWT_SECRET || 'testing';
 
 // Register
 router.post('/register', async (req, res) => {
   try {
     console.log('[User] Register payload:', req.body);
     const { name, email, password } = req.body;
-    const userExists = await User.findOne({ email });
-    if (userExists) return res.status(400).json({ error: 'User already exists' });
-
+    const exists = await User.findOne({ email });
+    if (exists) return res.status(400).json({ error: 'User already exists' });
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = new User({ name, email, password: hashedPassword });
     const savedUser = await user.save();
@@ -35,8 +35,7 @@ router.post('/login', async (req, res) => {
 
     const token = jwt.sign(
       { userId: user._id, isAdmin: user.isAdmin },
-      'your_jwt_secret', // Replace with env variable in production
-      { expiresIn: '1d' }
+      JWT_SECRET, { expiresIn: '1d' }
     );
     res.json({ token, user: { id: user._id, name: user.name, email: user.email, isAdmin: user.isAdmin } });
   } catch (error) {
@@ -50,7 +49,7 @@ router.get('/profile', async (req, res) => {
     const auth = req.headers.authorization;
     if (!auth) return res.status(401).json({ error: 'No token' });
     const token = auth.split(' ')[1];
-    const decoded = jwt.verify(token, 'your_jwt_secret');
+    const decoded = jwt.verify(token, JWT_SECRET);
     const user = await User.findById(decoded.userId).select('-password');
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user);

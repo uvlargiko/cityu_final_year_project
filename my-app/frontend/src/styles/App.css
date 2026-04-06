@@ -19,7 +19,6 @@ body {
   flex-direction: column;
 }
 
-/* Fixed-width layout for desktop */
 .content {
   width: 100%;
   max-width: 1300px;
@@ -29,7 +28,6 @@ body {
   min-height: calc(100vh - 120px);
 }
 
-/* navbar */
 .navbar {
   display: flex;
   align-items: center;
@@ -43,7 +41,6 @@ body {
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-/* left logo */
 .logo {
   font-size: 1.5rem;
   font-weight: 700;
@@ -57,7 +54,6 @@ body {
   color: #febd69;
 }
 
-/* search center */
 .search-wrap {
   flex: 1 1 auto;
   display: flex;
@@ -79,7 +75,6 @@ body {
   box-shadow: 0 0 0 3px rgba(254, 189, 105, 0.5);
 }
 
-/* right auth area */
 .nav-actions {
   margin-left: auto;
   display: flex;

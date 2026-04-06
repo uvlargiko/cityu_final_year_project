@@ -35,6 +35,42 @@
   padding: 12px;
 }
 
+.manage-products-list table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+.manage-products-list th,
+.manage-products-list td {
+  border-top: 1px solid #edf1f6;
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 0.92rem;
+}
+
+.manage-products-list th {
+  background: #f8fbff;
+}
+
+.row-actions {
+  display: flex;
+  gap: 8px;
+}
+.manage-products-actions button,
+.manage-products-list button {
+  border: none;
+  border-radius: 6px;
+  padding: 9px 12px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.manage-products-actions button {
+  background: #2c5b90;
+  color: #fff;
+}
+
 .manage-products-form input,
 .manage-products-form textarea {
   width: 100%;
@@ -53,20 +89,6 @@
   grid-column: 1 / -1;
   display: flex;
   gap: 10px;
-}
-
-.manage-products-actions button,
-.manage-products-list button {
-  border: none;
-  border-radius: 6px;
-  padding: 9px 12px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.manage-products-actions button {
-  background: #2c5b90;
-  color: #fff;
 }
 
 .manage-products-actions button.secondary,
@@ -90,28 +112,7 @@
   padding: 12px 12px 0;
 }
 
-.manage-products-list table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 760px;
-}
 
-.manage-products-list th,
-.manage-products-list td {
-  border-top: 1px solid #edf1f6;
-  text-align: left;
-  padding: 10px 12px;
-  font-size: 0.92rem;
-}
-
-.manage-products-list th {
-  background: #f8fbff;
-}
-
-.row-actions {
-  display: flex;
-  gap: 8px;
-}
 
 .manage-products-blocked {
   text-align: center;

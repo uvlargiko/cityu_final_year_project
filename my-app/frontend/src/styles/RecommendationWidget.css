@@ -79,7 +79,7 @@
 	object-fit: contain;
 }
 
-.recommendation-image-placeholder {
+.recommendation-image-not-exist {
 	font-size: 13px;
 	color: #64748b;
 }

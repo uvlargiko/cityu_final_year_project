@@ -37,16 +37,16 @@ export default function ChatHistory() {
       {loading && <div className="info">Loading chat history...</div>}
       {error && <div className="error">{error}</div>}
       {!loading && !error && records.length === 0 && (
-        <div className="info">No chat records found for this session.</div>
+      <div className="info">No chat records found for this session.</div>
       )}
       {!loading && !error && records.length > 0 && (
-        <div className="chat-history">
-          {records.map((r) => (
-            <div key={r._id} className={`chat-history-item ${r.role}`}>
-              <div className="chat-history-role">{r.role}</div>
-              <div className="chat-history-content">{r.content}</div>
-              <div className="chat-history-time">
-                {formatCreatedAt(r.createdAt)}
+      <div className="chat-history">
+        {records.map((r) => (
+          <div key={r._id} className={`chat-history-item ${r.role}`}>
+            <div className="chat-history-role">{r.role}</div>
+            <div className="chat-history-content">{r.content}</div>
+            <div className="chat-history-time">
+              {formatCreatedAt(r.createdAt)}
               </div>
             </div>
           ))}

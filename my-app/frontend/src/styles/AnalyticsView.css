@@ -7,16 +7,14 @@
 .analytics-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+    justify-content: space-between;
   gap: 12px;
 }
-
-.analytics-back {
-  text-decoration: none;
-  color: #23486f;
-  font-weight: 600;
+.analytics-kpis {
+  display: grid;
+    gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
-
 .analytics-error {
   background: #fff1f0;
   color: #9d1d1d;
@@ -25,11 +23,13 @@
   padding: 10px 12px;
 }
 
-.analytics-kpis {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+.analytics-back {
+  text-decoration: none;
+  color: #23486f;
+  font-weight: 600;
 }
+
+
 
 .kpi-card {
   border: 1px solid #dbe5ef;
@@ -68,28 +68,19 @@
   font-size: 1rem;
   color: #1f3651;
 }
-
-.analytics-panel ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
 .analytics-panel li {
   display: flex;
   justify-content: space-between;
+  font-size: 0.93rem;
   border-bottom: 1px solid #eef2f6;
   padding-bottom: 6px;
-  font-size: 0.93rem;
 }
 
 .recent-feedback .feedback-list {
   display: flex;
-  flex-direction: column;
   gap: 10px;
+  flex-direction: column;
+
 }
 
 .feedback-item {
@@ -105,6 +96,16 @@
   gap: 8px;
   font-size: 0.9rem;
 }
+
+.analytics-panel ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
 
 .feedback-meta {
   color: #465b74;

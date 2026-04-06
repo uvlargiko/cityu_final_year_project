@@ -137,22 +137,22 @@
 
 .purchase-item-row {
   display: grid;
-  grid-template-columns: 66px 1fr auto;
   align-items: center;
   gap: 12px;
   border: 1px solid #edf1f8;
   border-radius: 12px;
+  grid-template-columns: 66px 1fr auto;
   padding: 10px;
 }
 
 .purchase-item-media {
   width: 66px;
   height: 66px;
-  border-radius: 10px;
   overflow: hidden;
   background: #f7f9fc;
   display: flex;
   justify-content: center;
+  border-radius: 10px;
   align-items: center;
 }
 

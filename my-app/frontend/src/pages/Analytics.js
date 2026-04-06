@@ -6,7 +6,7 @@ export default function AnalyticsView() {
   const [summary, setSummary] = useState(null);
   const [recentFeedback, setRecentFeedback] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setErr] = useState('');
 
   const isAdmin = useMemo(() => {
     try {
@@ -22,7 +22,7 @@ export default function AnalyticsView() {
 
     async function loadAnalytics() {
       setLoading(true);
-      setError('');
+      setErr('');
       try {
         const [summaryRes, listRes] = await Promise.all([
           fetch('http://localhost:5000/api/feedback/stats/summary'),
@@ -50,7 +50,7 @@ export default function AnalyticsView() {
         }
       } catch (e) {
         if (!canceled) {
-          setError(e.message || 'Failed to load analytics');
+          setErr(e.message || 'Failed to load analytics');
         }
       } finally {
         if (!canceled) {
@@ -78,25 +78,24 @@ export default function AnalyticsView() {
     );
   }
 
-  const ratingDistribution = summary?.ratingDistribution || {};
-  const categoryBreakdown = summary?.categoryBreakdown || {};
-
-  const getHelpfulText = (value) => {
+const ratingDistribution = summary?.ratingDistribution || {};
+const categoryBreakdown = summary?.categoryBreakdown || {};
+const render = (value) => {
+    if (value) {
+      return <p className="feedback-comment">{value}</p>;
+    }
+    return <p className="muted">No comment</p>;
+  };
+const getHelpfulText = (value) => {
     if (typeof value !== 'boolean') {
       return 'N/A';
     }
     if (value) {
       return 'Yes';
     }
-    return 'No';
+      return 'No';
   };
 
-  const renderComment = (value) => {
-    if (value) {
-      return <p className="feedback-comment">{value}</p>;
-    }
-    return <p className="muted">No comment</p>;
-  };
 
   return (
     <div className="content analytics-page">
@@ -132,8 +131,8 @@ export default function AnalyticsView() {
               <ul>
                 {[1, 2, 3, 4, 5].map((r) => (
                   <li key={r}>
-                    <span>{r} star</span>
-                    <strong>{ratingDistribution[`rating_${r}`] || 0}</strong>
+                  <span>{r} star</span>
+                  <strong>{ratingDistribution[`rating_${r}`] || 0}</strong>
                   </li>
                 ))}
               </ul>
@@ -147,8 +146,8 @@ export default function AnalyticsView() {
                 <ul>
                   {Object.entries(categoryBreakdown).map(([category, count]) => (
                     <li key={category}>
-                      <span>{category}</span>
-                      <strong>{count}</strong>
+                    <span>{category}</span>
+                    <strong>{count}</strong>
                     </li>
                   ))}
                 </ul>
@@ -169,7 +168,7 @@ export default function AnalyticsView() {
                       <span>{new Date(f.createdAt || Date.now()).toLocaleString()}</span>
                     </header>
                     <p className="feedback-meta">Rating: {f.rating} | Helpful: {getHelpfulText(f.isHelpful)}</p>
-                    {renderComment(f.comment)}
+                    {render(f.comment)}
                   </article>
                 ))}
               </div>

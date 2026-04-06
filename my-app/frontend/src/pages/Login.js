@@ -43,34 +43,28 @@ export default function Login() {
           <p className="auth-eyebrow">Welcome back</p>
           <h1>Sign In To Continue Shopping</h1>
           <p>
-            Access your cart, chat history, order updates, and personalized recommendations.
-          </p>
+          Access your cart, chat history, order updates, and personalized recommendations.</p>
           <div className="auth-points">
-            <span>Fast checkout flow</span>
-            <span>Order and delivery tracking</span>
-            <span>AI shopping support</span>
+          <span>Fast checkout flow</span>
+          <span>Order and delivery tracking</span>
+          <span>AI shopping support</span>
           </div>
         </aside>
-
         <div className="auth-card">
           <h2>Sign In</h2>
           <p className="auth-subtitle">Use your account credentials to continue.</p>
           {err && <div className="auth-error">{err}</div>}
-
           <form onSubmit={submit} className="auth-form">
             <label>
               Email
               <input required type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} />
             </label>
-
             <label>
               Password
               <input required type="password" placeholder="Enter your password" value={password} onChange={e => setPassword(e.target.value)} />
             </label>
-
             <button type="submit" className="auth-submit-btn">Sign In</button>
           </form>
-
           <p className="auth-switch-link">
             New here? <Link to="/signup">Create an account</Link>
           </p>

@@ -19,10 +19,8 @@ export default function PurchaseHistory() {
   const [error, setError] = useState('');
 
   const identifiers = useMemo(() => getUserIdentifiers(), []);
-
   useEffect(() => {
     let canceled = false;
-
     async function fetchOrders() {
       if (identifiers.length === 0) {
         setLoading(false);
@@ -73,7 +71,6 @@ export default function PurchaseHistory() {
           <p>Track your previous orders and items purchased.</p>
           <Link to="/" className="purchase-history-back">Back to Shop</Link>
         </div>
-
         {loading ? (
           <div className="purchase-history-state">Loading your orders...</div>
         ) : error ? (
@@ -92,33 +89,30 @@ export default function PurchaseHistory() {
                 statusClass = 'badge paid';
                 statusLabel = 'Paid';
               }
-
               return (
                 <section key={order._id} className="purchase-order-card">
                   <header className="purchase-order-head">
                     <div>
-                      <h2>Order #{String(order._id).slice(-8).toUpperCase()}</h2>
-                      <span>{new Date(order.createdAt).toLocaleString()}</span>
+                    <h2>Order #{String(order._id).slice(-8).toUpperCase()}</h2>
+                    <span>{new Date(order.createdAt).toLocaleString()}</span>
                     </div>
                     <div className="purchase-order-meta">
-                      <strong>${Number(order.totalPrice || 0).toFixed(2)}</strong>
-                      <span className={statusClass}>{statusLabel}</span>
+                    <strong>${Number(order.totalPrice || 0).toFixed(2)}</strong>
+                    <span className={statusClass}>{statusLabel}</span>
                     </div>
                   </header>
-
                   <div className="purchase-order-items">
                     {(order.orderItems || []).map((item, idx) => {
                       let mediaNode = <div className="no-image">No image</div>;
                       if (item.imageUrl) {
                         mediaNode = <img src={item.imageUrl} alt={item.name} />;
                       }
-
                       return (
                         <article key={`${order._id}-${idx}`} className="purchase-item-row">
                           <div className="purchase-item-media">{mediaNode}</div>
                           <div className="purchase-item-info">
-                            <h3>{item.name}</h3>
-                            <p>Quantity: {item.qty}</p>
+                          <h3>{item.name}</h3>
+                          <p>Quantity: {item.qty}</p>
                           </div>
                           <div className="purchase-item-price">${Number(item.price || 0).toFixed(2)}</div>
                         </article>

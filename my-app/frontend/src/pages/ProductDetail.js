@@ -31,10 +31,8 @@ export default function ProductDetail({ cart, setCart }) {
         setLoading(false);
       });
   }, [id]);
-
   const addToCart = () => {
     if (!product) return;
-    
     const existing = cart.find(item => item._id === product._id);
     let newCart;
     if (existing) {
@@ -65,16 +63,13 @@ export default function ProductDetail({ cart, setCart }) {
   if (images[selectedImage]) {
     mainImageNode = <img src={images[selectedImage]} alt={product.name} className="main-image" />;
   }
-
   return (
     <div className="product-detail-page">
       <div className="content">
         <Link to="/" className="back-link">← Back to Shop</Link>
-        
         <div className="product-detail-container">
           <div className="product-images">
-            <div className="main-image-wrap">
-              {mainImageNode}
+            <div className="main-image-wrap">{mainImageNode}
             </div>
             {images.length > 1 && (
               <div className="thumbnail-grid">
@@ -83,18 +78,12 @@ export default function ProductDetail({ cart, setCart }) {
                   if (idx === selectedImage) {
                     thumbnailClass += ' active';
                   }
-
                   let thumbnailNode = <div className="image-placeholder-small">No image</div>;
                   if (img) {
                     thumbnailNode = <img src={img} alt={`${product.name} view ${idx + 1}`} />;
                   }
-
                   return (
-                    <div
-                      key={idx}
-                      className={thumbnailClass}
-                      onClick={() => setSelectedImage(idx)}
-                    >
+                    <div key={idx}className={thumbnailClass}onClick={() => setSelectedImage(idx)}>
                       {thumbnailNode}
                     </div>
                   );
@@ -106,9 +95,9 @@ export default function ProductDetail({ cart, setCart }) {
           <div className="product-info-detail">
             <h1 className="product-title">{product.name}</h1>
             <div className="product-meta">
-              <span className="product-brand">Brand: {product.brand || 'N/A'}</span>
-              <span className="product-category">Category: {product.category || 'N/A'}</span>
-              <div className="product-rating-detail">⭐ {product.rating ?? 'N/A'} / 5</div>
+            <span className="product-brand">Brand: {product.brand || 'N/A'}</span>
+            <span className="product-category">Category: {product.category || 'N/A'}</span>
+            <div className="product-rating-detail">⭐ {product.rating ?? 'N/A'} / 5</div>
             </div>
 
             <div className="product-price-detail">
@@ -122,20 +111,15 @@ export default function ProductDetail({ cart, setCart }) {
                 <li>Item ID: {product.itemid}</li>
                 <li>High quality materials</li>
                 <li>Fast shipping available</li>
-                <li>30-day return policy</li>
-              </ul>
+                <li>30-day return policy</li></ul>
             </div>
 
             <div className="quantity-selector">
               <label htmlFor="quantity">Quantity:</label>
               <div className="quantity-controls">
                 <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</button>
-                <input
-                  id="quantity"
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                <input id="quantity"type="number"min="1" value={quantity} 
+                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
                 />
                 <button onClick={() => setQuantity(quantity + 1)}>+</button>
               </div>

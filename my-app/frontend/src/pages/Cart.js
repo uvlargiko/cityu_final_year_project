@@ -41,8 +41,8 @@ export default function Cart({ cart, setCart }) {
       <div className="content">
       <div className="cart-empty">
        <h2>Your cart is empty</h2>
-          <p>Add some products to get started!</p>
-          <Link to="/" className="continue-shopping-btn">Continue Shopping</Link>
+        <p>Add some products to get started!</p>
+        <Link to="/" className="continue-shopping-btn">Continue Shopping</Link>
         </div>
       </div>
     );
@@ -55,27 +55,24 @@ export default function Cart({ cart, setCart }) {
         <div className="cart-items">
           <table className="cart-table">
             <thead>
-              <tr>
-                <th>Product</th>
-                <th>Price</th>
-                <th>Quantity</th>
-                <th>Subtotal</th>
-                <th></th>
-              </tr>
+              <tr><th>Product</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Subtotal</th>
+              <th></th></tr>
             </thead>
             <tbody>
               {cart.map((item) => (
                 <tr key={item._id}>
                   <td className="cart-product">
                     <div className="cart-product-info">
-                      {item.imageUrl && item.imageUrl[0] ? (
-                        <img src={item.imageUrl[0]} alt={item.name} className="cart-product-image" />
-                      ) : (
-                        <div className="cart-image-placeholder">No image</div>
+                      {item.imageUrl && item.imageUrl[0] ? (<img src={item.imageUrl[0]} alt={item.name} className="cart-product-image" />
+                      ) 
+                      : (<div className="cart-image-placeholder">No image</div>
                       )}
                       <div>
-                        <Link to={`/product/${item._id}`} className="cart-product-name">{item.name}</Link>
-                        <div className="cart-product-brand">{item.brand}</div>
+                      <Link to={`/product/${item._id}`} className="cart-product-name">{item.name}</Link>
+                      <div className="cart-product-brand">{item.brand}</div>
                       </div>
                     </div>
                   </td>
@@ -83,18 +80,12 @@ export default function Cart({ cart, setCart }) {
                   <td className="cart-quantity">
                     <div className="quantity-controls-cart">
                       <button onClick={() => updateQuantity(item._id, item.quantity - 1)}>−</button>
-                      <input
-                        type="number"
-                        min="1"
-                        value={item.quantity}
-                        onChange={(e) => updateQuantity(item._id, parseInt(e.target.value) || 1)}
-                      />
+                      <input type="number" min="1" value={item.quantity} onChange={(e) => updateQuantity(item._id, parseInt(e.target.value) || 1)}/>
                       <button onClick={() => updateQuantity(item._id, item.quantity + 1)}>+</button>
                     </div>
                   </td>
                   <td className="cart-subtotal">${(item.price * item.quantity).toFixed(2)}</td>
-                  <td>
-                    <button className="remove-btn" onClick={() => removeItem(item._id)}>✕</button>
+                  <td> <button className="remove-btn" onClick={() => removeItem(item._id)}>✕</button>
                   </td>
                 </tr>
               ))}

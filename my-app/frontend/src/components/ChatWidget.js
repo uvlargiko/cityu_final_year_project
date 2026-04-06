@@ -15,8 +15,8 @@ export default function ChatWidget() {
     { id: 'initial-' + Date.now(), role: 'assistant', content: 'Hi! I am your shop assistant. How can I help?' }
   ]);
   const [loading, setLoading] = useState(false);
-  const [feedbackStates, setFeedbackStates] = useState({}); // Track feedback for each message
-  const [showFeedbackModal, setShowFeedbackModal] = useState(null); // For detailed feedback
+  const [feedbackStates, setFeedbackStates] = useState({}); 
+  const [showFeedbackModal, setShowFeedbackModal] = useState(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -88,27 +88,27 @@ export default function ChatWidget() {
   };
 
   // Submit quick feedback (like/dislike)
-  const submitQuickFeedback = async (messageIndex, isHelpful, rating) => {
-    const assistantMessage = messages[messageIndex];
+  const quickfeedback = async (messageIndex, isHelpful, rating) => {
+    const assistant_msg = messages[messageIndex];
     let userMessage = 'General inquiry';
+     let feedbackCategory = 'irrelevant';
+    if (isHelpful) {
+      feedbackCategory = 'helpful';
+    }
     if (messageIndex > 0) {
       userMessage = messages[messageIndex - 1]?.content;
     }
 
-    let feedbackCategory = 'irrelevant';
-    if (isHelpful) {
-      feedbackCategory = 'helpful';
-    }
-
+ 
     try {
       await fetch('http://localhost:5000/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sessionId,
-          messageId: assistantMessage.id, 
+          messageId: assistant_msg.id, 
           userMessage,
-          assistantResponse: assistantMessage.content,
+          assistantResponse: assistant_msg.content,
           rating,
           isHelpful,
           category: feedbackCategory
@@ -133,8 +133,8 @@ export default function ChatWidget() {
   };
 
   // Submit detailed feedback
-  const submitDetailedFeedback = async (messageIndex, feedbackData) => {
-    const assistantMessage = messages[messageIndex];
+  const detailfeedback = async (messageIndex, feedbackData) => {
+    const assistant_msg = messages[messageIndex];
     let userMessage = 'General inquiry';
     if (messageIndex > 0) {
       userMessage = messages[messageIndex - 1]?.content;
@@ -145,10 +145,10 @@ export default function ChatWidget() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messageId: assistantMessage.id, 
+          messageId: assistant_msg.id, 
           sessionId,
           userMessage,
-          assistantResponse: assistantMessage.content,
+          assistantResponse: assistant_msg.content,
           rating: feedbackData.rating,
           isHelpful: feedbackData.isHelpful,
           category: feedbackData.category,
@@ -170,7 +170,7 @@ export default function ChatWidget() {
   return (
     <div className="chat-widget">
       {!open && (
-        <button className="chat-toggle" onClick={() => setOpen(true)} aria-label="Open chat">
+        <button className="chat-toggle" onClick={() => setOpen(true)} >
           💬 Chat
         </button>
       )}
@@ -182,7 +182,7 @@ export default function ChatWidget() {
               <strong>AI Assistant</strong>
               <div className="chat-subtitle">Local Llama</div>
             </div>
-            <button className="chat-close" onClick={() => setOpen(false)} aria-label="Close chat">
+            <button className="chat-close" onClick={() => setOpen(false)}>
               ✕
             </button>
           </div>
@@ -201,23 +201,19 @@ export default function ChatWidget() {
                       <div className="feedback-buttons">
                         <button
                           className="feedback-btn helpful"
-                          onClick={() => submitQuickFeedback(idx, true, 5)}
+                          onClick={() => quickfeedback(idx, true, 5)}
                           title="This response was helpful"
                         >
                           👍 Helpful
                         </button>
                         <button
                           className="feedback-btn unhelpful"
-                          onClick={() => submitQuickFeedback(idx, false, 2)}
+                          onClick={() => quickfeedback(idx, false, 2)}
                           title="This response was not helpful"
                         >
                           👎 Not Helpful
                         </button>
-                        <button
-                          className="feedback-btn detailed"
-                          onClick={() => setShowFeedbackModal(idx)}
-                          title="Provide detailed feedback"
-                        >
+                        <button className="feedback-btn detailed" onClick={() => setShowFeedbackModal(idx)}>
                           ⭐ Feedback
                         </button>
                       </div>
@@ -240,11 +236,7 @@ export default function ChatWidget() {
           </div>
 
           <div className="chat-input">
-            <textarea
-              rows={2}
-              placeholder="Type your message..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
+            <textarea rows={2} placeholder="Type your message..." value={input} onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
             />
             <button onClick={sendMessage} disabled={loading || !input.trim()}>
@@ -258,7 +250,7 @@ export default function ChatWidget() {
       {showFeedbackModal !== null && (
         <FeedbackModal
           onClose={() => setShowFeedbackModal(null)}
-          onSubmit={(data) => submitDetailedFeedback(showFeedbackModal, data)}
+          onSubmit={(data) => detailfeedback(showFeedbackModal, data)}
         />
       )}
     </div>
@@ -267,21 +259,19 @@ export default function ChatWidget() {
 
 // Detailed Feedback Modal Component
 function FeedbackModal({ onClose, onSubmit }) {
-  const [rating, setRating] = useState(3);
-  const [isHelpful, setIsHelpful] = useState(null);
-  const [category, setCategory] = useState('helpful');
-  const [comment, setComment] = useState('');
-  const [suggestion, setSuggestion] = useState('');
+const [rating, setRating] = useState(3);
+const [isHelpful, setIsHelpful] = useState(null);
+const [category, setCategory] = useState('helpful');
+const [comment, setComment] = useState('');
+const [suggestion, setSuggestion] = useState('');
 
-  const getStarClass = (star) => {
+  const getstarclass = (star) => {
     let className = 'star';
-    if (rating >= star) {
-      className += ' active';
-    }
+    if (rating >= star) { className += ' active';}
     return className;
   };
 
-  const getHelpfulBtnClass = (value) => {
+  const getHelpfulBtnclass = (value) => {
     let className = 'toggle-btn';
     if (isHelpful === value) {
       className += ' active';
@@ -309,7 +299,7 @@ function FeedbackModal({ onClose, onSubmit }) {
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}
-                  className={getStarClass(star)}
+                  className={getstarclass(star)}
                   onClick={() => setRating(star)}
                 >
                   ⭐
@@ -323,13 +313,13 @@ function FeedbackModal({ onClose, onSubmit }) {
             <label>Was this response helpful?</label>
             <div className="feedback-toggle">
               <button
-                className={getHelpfulBtnClass(true)}
+                className={getHelpfulBtnclass(true)}
                 onClick={() => setIsHelpful(true)}
               >
                 👍 Yes
               </button>
               <button
-                className={getHelpfulBtnClass(false)}
+                className={getHelpfulBtnclass(false)}
                 onClick={() => setIsHelpful(false)}
               >
                 👎 No

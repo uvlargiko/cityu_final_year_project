@@ -37,8 +37,7 @@ export default function Signup() {
           <p className="auth-eyebrow">Join MyShop</p>
           <h1>Create Your Account</h1>
           <p>
-            Start building your cart, save order history, and receive recommendations tailored to your purchases.
-          </p>
+            Start building your cart, save order history, and receive recommendations tailored to your purchases.</p>
           <div className="auth-points">
             <span>Personalized suggestions</span>
             <span>Secure sign-in experience</span>
@@ -56,20 +55,16 @@ export default function Signup() {
               Full Name
               <input required type="text" placeholder="Jane Doe" value={name} onChange={e => setName(e.target.value)} />
             </label>
-
             <label>
               Email
               <input required type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} />
             </label>
-
             <label>
               Password
               <input required type="password" placeholder="Choose a secure password" value={password} onChange={e => setPassword(e.target.value)} />
             </label>
-
             <button type="submit" className="auth-submit-btn">Create Account</button>
           </form>
-
           <p className="auth-switch-link">
             Already have an account? <Link to="/login">Sign in</Link>
           </p>

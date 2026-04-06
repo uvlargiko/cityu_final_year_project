@@ -118,21 +118,17 @@ export default function ManageProducts() {
       if (editingId) {
         url = `http://localhost:5000/api/goods/${encodeURIComponent(editingId)}`;
       }
-
       let method = 'POST';
       if (editingId) {
         method = 'PUT';
       }
-
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Save failed');
-
       resetForm();
       await loadProducts();
     } catch (e2) {
@@ -156,19 +152,17 @@ export default function ManageProducts() {
       setError(e.message || 'Delete failed');
     }
   };
-
   if (!isAdmin) {
     return (
       <div className="content">
-        <div className="manage-products-blocked">
-          <h1>Manage Products</h1>
-          <p>Admin access is required.</p>
-          <Link to="/" className="manage-products-back">Back to Shop</Link>
+      <div className="manage-products-blocked">
+        <h1>Manage Products</h1>
+        <p>Admin access is required.</p>
+        <Link to="/" className="manage-products-back">Back to Shop</Link>
         </div>
       </div>
     );
   }
-
   let submitLabel = 'Create Product';
   if (editingId) {
     submitLabel = 'Update Product';
@@ -176,16 +170,13 @@ export default function ManageProducts() {
   if (saving) {
     submitLabel = 'Saving...';
   }
-
   return (
     <div className="content manage-products-page">
       <div className="manage-products-head">
         <h1>Manage Products</h1>
         <Link to="/" className="manage-products-back">Back to Shop</Link>
       </div>
-
       {error && <div className="manage-products-error">{error}</div>}
-
       <form className="manage-products-form" onSubmit={onSubmit}>
         <input value={form.itemid} onChange={(e) => onChange('itemid', e.target.value)} placeholder="Item ID" required />
         <input value={form.name} onChange={(e) => onChange('name', e.target.value)} placeholder="Name" required />
@@ -198,7 +189,6 @@ export default function ManageProducts() {
         <input value={form.numReviews} onChange={(e) => onChange('numReviews', e.target.value)} placeholder="Num Reviews" type="number" required />
         <textarea value={form.description} onChange={(e) => onChange('description', e.target.value)} placeholder="Description" rows={3} required />
         <input value={form.imageUrlText} onChange={(e) => onChange('imageUrlText', e.target.value)} placeholder="Image URLs (comma-separated)" />
-
         <div className="manage-products-actions">
           <button type="submit" disabled={saving}>{submitLabel}</button>
           {editingId && <button type="button" className="secondary" onClick={resetForm}>Cancel Edit</button>}
@@ -215,14 +205,13 @@ export default function ManageProducts() {
           <table>
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Item ID</th>
-                <th>Brand</th>
-                <th>Category</th>
-                <th>Price</th>
-                <th>Stock</th>
-                <th>Actions</th>
-              </tr>
+              <th>Name</th>
+              <th>Item ID</th>
+              <th>Brand</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Actions</th></tr>
             </thead>
             <tbody>
               {products.map((p) => (
